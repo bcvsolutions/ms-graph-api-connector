@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.identityconnectors.common.logging.Log;
 
+import com.microsoft.graph.core.ClientException;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
@@ -26,7 +27,12 @@ public class SearchOperation {
 	}
 
 	public User getUser(String id) {
-		return graphClient.users(id).buildRequest().get();
+		try {
+			return graphClient.users(id).buildRequest().get();
+		} catch (ClientException e) {
+			LOG.info("ClientException", e);
+		}
+		return null;
 	}
 
 	public Group getGroup(String id) {

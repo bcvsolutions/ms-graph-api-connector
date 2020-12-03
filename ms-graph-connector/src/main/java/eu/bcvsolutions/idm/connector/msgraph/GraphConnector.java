@@ -4,11 +4,10 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
-import org.identityconnectors.framework.api.operations.ResolveUsernameApiOp;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
 import org.identityconnectors.framework.common.objects.ObjectClass;
@@ -26,14 +25,12 @@ import org.identityconnectors.framework.common.objects.filter.FilterTranslator;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.identityconnectors.framework.spi.ConnectorClass;
-import org.identityconnectors.framework.spi.operations.AuthenticateOp;
 import org.identityconnectors.framework.spi.operations.CreateOp;
 import org.identityconnectors.framework.spi.operations.DeleteOp;
 import org.identityconnectors.framework.spi.operations.SchemaOp;
 import org.identityconnectors.framework.spi.operations.SearchOp;
 import org.identityconnectors.framework.spi.operations.SyncOp;
 import org.identityconnectors.framework.spi.operations.TestOp;
-import org.identityconnectors.framework.spi.operations.UpdateAttributeValuesOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
 
 import com.microsoft.graph.auth.confidentialClient.ClientCredentialProvider;
@@ -43,7 +40,10 @@ import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
 import com.microsoft.graph.requests.extensions.GraphServiceClient;
 
+import eu.bcvsolutions.idm.connector.msgraph.operation.CreateOperation;
+import eu.bcvsolutions.idm.connector.msgraph.operation.DeleteOperation;
 import eu.bcvsolutions.idm.connector.msgraph.operation.SearchOperation;
+import eu.bcvsolutions.idm.connector.msgraph.operation.UpdateOperation;
 import eu.bcvsolutions.idm.connector.msgraph.util.GuardedStringAccessor;
 import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
 
@@ -53,8 +53,7 @@ import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
  */
 @ConnectorClass(configurationClass = GraphConfiguration.class, displayNameKey = "graph.connector.display")
 public class GraphConnector implements Connector,
-		CreateOp, UpdateOp, UpdateAttributeValuesOp, DeleteOp,
-		AuthenticateOp, ResolveUsernameApiOp, SchemaOp, SyncOp, TestOp, SearchOp<String> {
+		CreateOp, UpdateOp, DeleteOp, SchemaOp, SyncOp, TestOp, SearchOp<String> {
 
 	private static final Log LOG = Log.getLog(GraphConnector.class);
 
@@ -83,8 +82,23 @@ public class GraphConnector implements Connector,
 			final ObjectClass objectClass,
 			final Set<Attribute> createAttributes,
 			final OperationOptions options) {
+		if (graphClient == null) {
+			initGraphClient();
+		}
 
-		return new Uid(UUID.randomUUID().toString());
+		if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
+			CreateOperation createOperation = new CreateOperation(graphClient, guardedStringAccessor);
+			User user = createOperation.createUser(createAttributes);
+			return new Uid(user.userPrincipalName);
+		}
+
+		if (objectClass.is(ObjectClass.GROUP_NAME)) {
+			CreateOperation createOperation = new CreateOperation(graphClient, guardedStringAccessor);
+			Group group = createOperation.createGroup(createAttributes);
+			return new Uid(group.id);
+		}
+
+		throw new ConnectorException("Object was not created for unknown reason, see log for further details");
 	}
 
 	@Override
@@ -94,27 +108,23 @@ public class GraphConnector implements Connector,
 			final Set<Attribute> replaceAttributes,
 			final OperationOptions options) {
 
-		return uid;
-	}
+		if (graphClient == null) {
+			initGraphClient();
+		}
 
-	@Override
-	public Uid addAttributeValues(
-			final ObjectClass objclass,
-			final Uid uid,
-			final Set<Attribute> valuesToAdd,
-			final OperationOptions options) {
+		if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
+			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor);
+			updateOperation.updateUser(replaceAttributes, uid);
+			return uid;
+		}
 
-		return uid;
-	}
+		if (objectClass.is(ObjectClass.GROUP_NAME)) {
+			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor);
+			updateOperation.updateGroup(replaceAttributes, uid);
+			return uid;
+		}
 
-	@Override
-	public Uid removeAttributeValues(
-			final ObjectClass objclass,
-			final Uid uid,
-			final Set<Attribute> valuesToRemove,
-			final OperationOptions options) {
-
-		return uid;
+		throw new ConnectorException("Object was not created for unknown reason, see log for further details");
 	}
 
 	@Override
@@ -122,25 +132,24 @@ public class GraphConnector implements Connector,
 			final ObjectClass objectClass,
 			final Uid uid,
 			final OperationOptions options) {
-	}
 
-	@Override
-	public Uid authenticate(
-			final ObjectClass objectClass,
-			final String username,
-			final GuardedString password,
-			final OperationOptions options) {
+		if (graphClient == null) {
+			initGraphClient();
+		}
 
-		return new Uid(username);
-	}
+		if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
+			DeleteOperation deleteOperation = new DeleteOperation(graphClient, guardedStringAccessor);
+			deleteOperation.deleteUser(uid);
+			return;
+		}
 
-	@Override
-	public Uid resolveUsername(
-			final ObjectClass objectClass,
-			final String username,
-			final OperationOptions options) {
+		if (objectClass.is(ObjectClass.GROUP_NAME)) {
+			DeleteOperation deleteOperation = new DeleteOperation(graphClient, guardedStringAccessor);
+			deleteOperation.deleteGroup(uid);
+			return;
+		}
 
-		return new Uid(username);
+		throw new ConnectorException("Object was not deleted for unknown reason, see log for further details");
 	}
 
 	@Override
@@ -159,12 +168,19 @@ public class GraphConnector implements Connector,
 		return schemaBuilder.build();
 	}
 
-	private void prepareSchema(ObjectClassInfoBuilder groupObjectClassBuilder, Field[] declaredFieldsGroups) {
+	private void prepareSchema(ObjectClassInfoBuilder objectClassBuilder, Field[] declaredFieldsGroups) {
 		Arrays.stream(declaredFieldsGroups).forEach(field -> {
 			if (field.getType() == String.class || field.getType() == Boolean.class || field.getType() == Integer.class) {
-				groupObjectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build(field.getName(), field.getType()));
+				objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build(field.getName(), field.getType()));
 			} else {
-				LOG.info("Property type {0} not supported now", field.getType().getName());
+				if (field.getName().equals("passwordProfile")) {
+					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("forceChangePasswordNextSignIn", Boolean.class));
+					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("forceChangePasswordNextSignInWithMfa", Boolean.class));
+					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("__PASSWORD__", GuardedString.class));
+				} else{
+//					TODO this works for custom object but I dont want to use it for now, probably more object will need some manual mapping as passwordProfile
+//					prepareSchema(objectClassBuilder, field.getType().getDeclaredFields());
+				}
 			}
 		});
 	}
@@ -232,10 +248,14 @@ public class GraphConnector implements Connector,
 			LOG.info("Get one record");
 			if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
 				User user = searchOperation.getUser(query);
-				handler.handle(Utils.handleUser(user, objectClass));
+				if (user != null) {
+					handler.handle(Utils.handleUser(user, objectClass));
+				}
 			} else if (objectClass.is(ObjectClass.GROUP_NAME)) {
 				Group group = searchOperation.getGroup(query);
-				handler.handle(Utils.handleGroup(group, objectClass));
+				if (group != null) {
+					handler.handle(Utils.handleGroup(group, objectClass));
+				}
 			} else {
 				LOG.warn("Unsupported object class {0}", objectClass);
 			}
@@ -256,12 +276,11 @@ public class GraphConnector implements Connector,
 	private void initGraphClient() {
 		guardedStringAccessor = new GuardedStringAccessor();
 		this.configuration.getClientSecret().access(guardedStringAccessor);
-		char[] pass = guardedStringAccessor.getArray();
 
 		ClientCredentialProvider authProvider = new ClientCredentialProvider(
 				this.configuration.getClientId(),
 				Arrays.asList(this.configuration.getScopes()),
-				new String(pass),
+				new String(guardedStringAccessor.getArray()),
 				this.configuration.getTenant(),
 				NationalCloud.valueOf(this.getConfiguration().getNationalCloud()));
 
