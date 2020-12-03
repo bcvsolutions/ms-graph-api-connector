@@ -1,16 +1,28 @@
 package eu.bcvsolutions.idm.connector.msgraph.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.identityconnectors.common.logging.Log;
-import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributesAccessor;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 
+import com.microsoft.graph.models.extensions.AssignedLicense;
 import com.microsoft.graph.models.extensions.DirectoryObject;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.PasswordProfile;
@@ -68,9 +80,7 @@ public final class Utils {
 		});
 	}
 
-	public static User prepareUserObject(Set<Attribute> updateAttributes, GuardedStringAccessor guardedStringAccessor) {
-		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
-
+	public static User prepareUserObject(AttributesAccessor attributesAccessor, GuardedStringAccessor guardedStringAccessor) {
 		User user = new User();
 		setPasswordToUser(guardedStringAccessor, attributesAccessor, user);
 
@@ -108,5 +118,35 @@ public final class Utils {
 
 			user.passwordProfile = passwordProfile;
 		}
+	}
+
+	public static List<UUID> prepareRemoveLicence(AttributesAccessor attributesAccessor) {
+		List<String> removeLicenses = attributesAccessor.findStringList("removeLicenses");
+		return removeLicenses.stream().map(UUID::fromString).collect(Collectors.toList());
+	}
+
+	public static List<AssignedLicense> prepareAddLicence(AttributesAccessor attributesAccessor) {
+//		Byte[] disabledPlansByteArray = attributesAccessor.findByteArray("disabledPlans");
+		List<String> addLicenses = attributesAccessor.findStringList("addLicenses");
+
+//		Map<String, String> disabledPlans = new HashMap<>();
+//		try (ByteArrayInputStream byteIn = new ByteArrayInputStream(ArrayUtils.toPrimitive(disabledPlansByteArray));
+//			 ObjectInputStream in = new ObjectInputStream(byteIn)) {
+//			disabledPlans = (Map<String, String>) in.readObject();
+//		} catch (IOException | ClassNotFoundException e) {
+//			LOG.error("Error during map parsing", e);
+//		}
+
+		List<AssignedLicense> addLicensesList = new ArrayList<>();
+		addLicenses.forEach(licence -> {
+			List<UUID> disabledPlansList = new ArrayList<>();
+
+			AssignedLicense license = new AssignedLicense();
+			license.disabledPlans = disabledPlansList;
+			license.skuId = UUID.fromString(licence);
+			addLicensesList.add(license);
+		});
+
+		return addLicensesList;
 	}
 }

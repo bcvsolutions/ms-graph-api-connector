@@ -35,7 +35,14 @@ public class CreateOperation {
 	}
 
 	public User createUser(final Set<Attribute> createAttributes) {
-		User user = Utils.prepareUserObject(createAttributes, guardedStringAccessor);
+		AttributesAccessor attributesAccessor = new AttributesAccessor(createAttributes);
+		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
+
+//		graphClient.me()
+//				.assignLicense(addLicensesList,removeLicensesList)
+//				.buildRequest()
+//				.post();
+
 		return graphClient.users().buildRequest().post(user);
 	}
 

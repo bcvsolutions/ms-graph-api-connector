@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.Attribute;
+import org.identityconnectors.framework.common.objects.AttributesAccessor;
 import org.identityconnectors.framework.common.objects.Uid;
 
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
@@ -29,7 +30,8 @@ public class UpdateOperation {
 	}
 
 	public void updateUser(final Set<Attribute> updateAttributes, Uid uid) {
-		User user = Utils.prepareUserObject(updateAttributes, guardedStringAccessor);
+		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
+		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
 		graphClient.users(uid.getUidValue()).buildRequest().patch(user);
 	}
 

@@ -169,6 +169,9 @@ public class GraphConnector implements Connector,
 	}
 
 	private void prepareSchema(ObjectClassInfoBuilder objectClassBuilder, Field[] declaredFieldsGroups) {
+//		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("disabledPlans").setMultiValued(true).setType(Byte[].class).build());
+		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("addLicenses").setMultiValued(true).setType(String.class).build());
+		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("removeLicenses").setMultiValued(true).setType(String.class).build());
 		Arrays.stream(declaredFieldsGroups).forEach(field -> {
 			if (field.getType() == String.class || field.getType() == Boolean.class || field.getType() == Integer.class) {
 				objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build(field.getName(), field.getType()));
