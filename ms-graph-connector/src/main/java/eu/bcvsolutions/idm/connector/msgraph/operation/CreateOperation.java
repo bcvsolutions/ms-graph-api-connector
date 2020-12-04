@@ -1,18 +1,13 @@
 package eu.bcvsolutions.idm.connector.msgraph.operation;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Set;
 
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributesAccessor;
 
-import com.microsoft.graph.auth.confidentialClient.ClientCredentialProvider;
-import com.microsoft.graph.auth.enums.NationalCloud;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
-import com.microsoft.graph.models.extensions.PasswordProfile;
 import com.microsoft.graph.models.extensions.User;
 
 import eu.bcvsolutions.idm.connector.msgraph.util.GuardedStringAccessor;
@@ -38,12 +33,15 @@ public class CreateOperation {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(createAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
 
-//		graphClient.me()
-//				.assignLicense(addLicensesList,removeLicensesList)
-//				.buildRequest()
-//				.post();
+		user = graphClient
+				.users()
+				.buildRequest()
+				.post(user);
+		LOG.info("User {0} created", user.userPrincipalName);
 
-		return graphClient.users().buildRequest().post(user);
+		Utils.setLicenses(attributesAccessor, user.userPrincipalName, LOG, graphClient);
+
+		return user;
 	}
 
 	public Group createGroup(Set<Attribute> createAttributes) {

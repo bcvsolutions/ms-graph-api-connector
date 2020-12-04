@@ -1,6 +1,7 @@
 package eu.bcvsolutions.idm.connector.msgraph;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -57,6 +58,8 @@ public class GraphConnector implements Connector,
 
 	private static final Log LOG = Log.getLog(GraphConnector.class);
 
+	public static List<String> basicUserAttrs = new ArrayList<>();
+
 	private GraphConfiguration configuration;
 	private IGraphServiceClient graphClient;
 	private GuardedStringAccessor guardedStringAccessor;
@@ -70,6 +73,14 @@ public class GraphConnector implements Connector,
 	public void init(final Configuration configuration) {
 		this.configuration = (GraphConfiguration) configuration;
 		LOG.ok("Connector {0} successfully inited", getClass().getName());
+
+		Arrays.stream(User.class.getDeclaredFields()).forEach(field -> {
+			if (field.getType() == String.class || field.getType() == Boolean.class || field.getType() == Integer.class) {
+				if (!field.getName().equals("deviceEnrollmentLimit")) {
+					basicUserAttrs.add(field.getName());
+				}
+			}
+		});
 	}
 
 	@Override
@@ -169,9 +180,7 @@ public class GraphConnector implements Connector,
 	}
 
 	private void prepareSchema(ObjectClassInfoBuilder objectClassBuilder, Field[] declaredFieldsGroups) {
-//		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("disabledPlans").setMultiValued(true).setType(Byte[].class).build());
-		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("addLicenses").setMultiValued(true).setType(String.class).build());
-		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("removeLicenses").setMultiValued(true).setType(String.class).build());
+		objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("assignedLicenses").setMultiValued(true).setType(String.class).build());
 		Arrays.stream(declaredFieldsGroups).forEach(field -> {
 			if (field.getType() == String.class || field.getType() == Boolean.class || field.getType() == Integer.class) {
 				objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build(field.getName(), field.getType()));
@@ -180,7 +189,7 @@ public class GraphConnector implements Connector,
 					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("forceChangePasswordNextSignIn", Boolean.class));
 					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("forceChangePasswordNextSignInWithMfa", Boolean.class));
 					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("__PASSWORD__", GuardedString.class));
-				} else{
+				} else {
 //					TODO this works for custom object but I dont want to use it for now, probably more object will need some manual mapping as passwordProfile
 //					prepareSchema(objectClassBuilder, field.getType().getDeclaredFields());
 				}

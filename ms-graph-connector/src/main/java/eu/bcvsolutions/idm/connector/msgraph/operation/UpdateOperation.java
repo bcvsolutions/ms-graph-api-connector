@@ -32,7 +32,13 @@ public class UpdateOperation {
 	public void updateUser(final Set<Attribute> updateAttributes, Uid uid) {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
-		graphClient.users(uid.getUidValue()).buildRequest().patch(user);
+		graphClient
+				.users(uid.getUidValue())
+				.buildRequest()
+				.patch(user);
+		LOG.info("User {0} updated", uid.getUidValue());
+
+		Utils.setLicenses(attributesAccessor, uid.getUidValue(), LOG, graphClient);
 	}
 
 	public void updateGroup(Set<Attribute> updateAttributes, Uid uid) {
