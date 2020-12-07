@@ -15,9 +15,9 @@ import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
 
 /**
  * @author Roman Kučera
+ * Class for update operations
  */
 public class UpdateOperation {
-	// TODO add logs
 
 	private static final Log LOG = Log.getLog(UpdateOperation.class);
 
@@ -29,6 +29,12 @@ public class UpdateOperation {
 		this.guardedStringAccessor = guardedStringAccessor;
 	}
 
+	/**
+	 * Update specific User
+	 *
+	 * @param updateAttributes Set of attributes which should be updated
+	 * @param uid              User identification
+	 */
 	public void updateUser(final Set<Attribute> updateAttributes, Uid uid) {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
@@ -38,9 +44,15 @@ public class UpdateOperation {
 				.patch(user);
 		LOG.info("User {0} updated", uid.getUidValue());
 
-		Utils.setLicenses(attributesAccessor, uid.getUidValue(), LOG, graphClient);
+		Utils.setLicenses(attributesAccessor, uid.getUidValue(), graphClient);
 	}
 
+	/**
+	 * Update specific group
+	 *
+	 * @param updateAttributes Set of attributes which should be updated
+	 * @param uid              Group identification
+	 */
 	public void updateGroup(Set<Attribute> updateAttributes, Uid uid) {
 		// TODO implement
 		throw new UnsupportedOperationException("Not implemented yet");

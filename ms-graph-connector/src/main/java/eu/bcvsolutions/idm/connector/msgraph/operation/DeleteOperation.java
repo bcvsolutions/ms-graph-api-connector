@@ -14,24 +14,31 @@ import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
 
 /**
  * @author Roman Kučera
+ * Class for delete operations
  */
 public class DeleteOperation {
-	// TODO add logs
-
 	private static final Log LOG = Log.getLog(DeleteOperation.class);
 
 	private final IGraphServiceClient graphClient;
-	private final GuardedStringAccessor guardedStringAccessor;
 
-	public DeleteOperation(IGraphServiceClient graphClient, GuardedStringAccessor guardedStringAccessor) {
+	public DeleteOperation(IGraphServiceClient graphClient) {
 		this.graphClient = graphClient;
-		this.guardedStringAccessor = guardedStringAccessor;
 	}
 
+	/**
+	 * Delete specific user
+	 * @param uid User identification
+	 */
 	public void deleteUser(Uid uid) {
+		LOG.info("User {0} will be deleted", uid.getUidValue());
 		graphClient.users(uid.getUidValue()).buildRequest().delete();
+		LOG.info("User {0} deleted", uid.getUidValue());
 	}
 
+	/**
+	 * Delete specific group
+	 * @param uid Group identification
+	 */
 	public void deleteGroup(Uid uid) {
 		// TODO implement
 		throw new UnsupportedOperationException("Not implemented yet");

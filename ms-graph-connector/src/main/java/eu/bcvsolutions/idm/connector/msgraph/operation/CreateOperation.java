@@ -15,9 +15,9 @@ import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
 
 /**
  * @author Roman Kučera
+ * Class for creating operations
  */
 public class CreateOperation {
-	// TODO add logs
 
 	private static final Log LOG = Log.getLog(CreateOperation.class);
 
@@ -29,6 +29,12 @@ public class CreateOperation {
 		this.guardedStringAccessor = guardedStringAccessor;
 	}
 
+	/**
+	 * Create user from attributes
+	 *
+	 * @param createAttributes Set of attributes from which we create user
+	 * @return User object of created user
+	 */
 	public User createUser(final Set<Attribute> createAttributes) {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(createAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
@@ -39,11 +45,17 @@ public class CreateOperation {
 				.post(user);
 		LOG.info("User {0} created", user.userPrincipalName);
 
-		Utils.setLicenses(attributesAccessor, user.userPrincipalName, LOG, graphClient);
+		Utils.setLicenses(attributesAccessor, user.userPrincipalName, graphClient);
 
 		return user;
 	}
 
+	/**
+	 * Craete group from attributes
+	 *
+	 * @param createAttributes Set of attributes from which we create group
+	 * @return Group object of created group
+	 */
 	public Group createGroup(Set<Attribute> createAttributes) {
 		// TODO implement
 		throw new UnsupportedOperationException("Not implemented yet");

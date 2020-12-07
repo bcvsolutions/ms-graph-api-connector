@@ -10,6 +10,7 @@ import com.microsoft.graph.auth.enums.NationalCloud;
 
 /**
  * @author Roman Kučera
+ * Configuration of connector
  */
 public class GraphConfiguration extends AbstractConfiguration {
 
@@ -88,9 +89,6 @@ public class GraphConfiguration extends AbstractConfiguration {
 		if (clientSecret == null) {
 			throw new ConfigurationException("Client secret must not be blank!");
 		}
-//		if (scopes == null || scopes.length == 0) {
-//			throw new ConfigurationException("Scopes must not be blank");
-//		}
 	}
 
 	public String getMessage(String key) {
