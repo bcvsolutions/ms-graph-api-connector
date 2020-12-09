@@ -1,5 +1,6 @@
 package eu.bcvsolutions.idm.connector.msgraph.operation;
 
+import java.util.List;
 import java.util.Set;
 
 import org.identityconnectors.common.logging.Log;
@@ -45,7 +46,10 @@ public class CreateOperation {
 				.post(user);
 		LOG.info("User {0} created", user.userPrincipalName);
 
-		Utils.setLicenses(attributesAccessor, user.userPrincipalName, graphClient);
+		List<String> assignedLicenses = attributesAccessor.findStringList("assignedLicenses");
+		if (assignedLicenses != null && !assignedLicenses.isEmpty()) {
+			Utils.setLicenses(assignedLicenses, user.userPrincipalName, graphClient);
+		}
 
 		return user;
 	}

@@ -213,12 +213,11 @@ public final class Utils {
 	/**
 	 * Update licenses for users. It will perform get to end system and then make diff and decide which licences should be removed and which should be added
 	 *
-	 * @param attributesAccessor AttributeAccessor with specific attributes for User
+	 * @param addLicenses List with licenses
 	 * @param uid                User identification
 	 * @param graphClient        client for Graph API
 	 */
-	public static void setLicenses(AttributesAccessor attributesAccessor, String uid, IBaseGraphServiceClient graphClient) {
-		List<String> addLicenses = attributesAccessor.findStringList("assignedLicenses");
+	public static void setLicenses(List<String> addLicenses, String uid, IBaseGraphServiceClient graphClient) {
 		List<UUID> removeLicenses = new ArrayList<>();
 
 		if (addLicenses != null) {

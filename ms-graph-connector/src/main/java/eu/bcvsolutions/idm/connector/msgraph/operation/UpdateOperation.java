@@ -1,5 +1,6 @@
 package eu.bcvsolutions.idm.connector.msgraph.operation;
 
+import java.util.List;
 import java.util.Set;
 
 import org.identityconnectors.common.logging.Log;
@@ -41,7 +42,7 @@ public class UpdateOperation {
 	public void updateUser(final Set<Attribute> updateAttributes, Uid uid) {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
-		if (graphConfiguration.isDisablePasswordChangeAfterFirstLogin()) {
+		if (graphConfiguration.isDisablePasswordChangeAfterFirstLogin() && user.passwordProfile != null) {
 			LOG.info("Disable of password change after first login for password change operation is enable in connector configuration.");
 			user.passwordProfile.forceChangePasswordNextSignIn = false;
 		}
@@ -51,7 +52,8 @@ public class UpdateOperation {
 				.patch(user);
 		LOG.info("User {0} updated", uid.getUidValue());
 
-		Utils.setLicenses(attributesAccessor, uid.getUidValue(), graphClient);
+		List<String> assignedLicenses = attributesAccessor.findStringList("assignedLicenses");
+		Utils.setLicenses(assignedLicenses, uid.getUidValue(), graphClient);
 	}
 
 	/**
