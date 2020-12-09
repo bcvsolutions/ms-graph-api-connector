@@ -10,6 +10,7 @@ import org.identityconnectors.framework.common.objects.Uid;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
 
+import eu.bcvsolutions.idm.connector.msgraph.GraphConfiguration;
 import eu.bcvsolutions.idm.connector.msgraph.util.GuardedStringAccessor;
 import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
 
@@ -23,10 +24,12 @@ public class UpdateOperation {
 
 	private final IGraphServiceClient graphClient;
 	private final GuardedStringAccessor guardedStringAccessor;
+	private final GraphConfiguration graphConfiguration;
 
-	public UpdateOperation(IGraphServiceClient graphClient, GuardedStringAccessor guardedStringAccessor) {
+	public UpdateOperation(IGraphServiceClient graphClient, GuardedStringAccessor guardedStringAccessor, GraphConfiguration graphConfiguration) {
 		this.graphClient = graphClient;
 		this.guardedStringAccessor = guardedStringAccessor;
+		this.graphConfiguration = graphConfiguration;
 	}
 
 	/**
@@ -38,6 +41,10 @@ public class UpdateOperation {
 	public void updateUser(final Set<Attribute> updateAttributes, Uid uid) {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
+		if (graphConfiguration.isDisablePasswordChangeAfterFirstLogin()) {
+			LOG.info("Disable of password change after first login for password change operation is enable in connector configuration.");
+			user.passwordProfile.forceChangePasswordNextSignIn = false;
+		}
 		graphClient
 				.users(uid.getUidValue())
 				.buildRequest()

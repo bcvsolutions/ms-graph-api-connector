@@ -19,6 +19,7 @@ public class GraphConfiguration extends AbstractConfiguration {
 	private GuardedString clientSecret;
 	private String tenant;
 	private String nationalCloud;
+	private boolean disablePasswordChangeAfterFirstLogin;
 
 	@ConfigurationProperty(displayMessageKey = "graph.connector.clientId.display",
 			helpMessageKey = "graph.connector.clientId.help", required = true, order = 1)
@@ -71,6 +72,16 @@ public class GraphConfiguration extends AbstractConfiguration {
 
 	public void setNationalCloud(String nationalCloud) {
 		this.nationalCloud = nationalCloud;
+	}
+
+	@ConfigurationProperty(displayMessageKey = "graph.connector.disableChange.display",
+			helpMessageKey = "graph.connector.disableChange.help", order = 6)
+	public boolean isDisablePasswordChangeAfterFirstLogin() {
+		return disablePasswordChangeAfterFirstLogin;
+	}
+
+	public void setDisablePasswordChangeAfterFirstLogin(boolean disablePasswordChangeAfterFirstLogin) {
+		this.disablePasswordChangeAfterFirstLogin = disablePasswordChangeAfterFirstLogin;
 	}
 
 	@Override

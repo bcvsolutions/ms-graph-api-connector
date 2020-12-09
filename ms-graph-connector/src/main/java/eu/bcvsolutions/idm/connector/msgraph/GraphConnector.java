@@ -121,13 +121,13 @@ public class GraphConnector implements Connector,
 		}
 
 		if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
-			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor);
+			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor, configuration);
 			updateOperation.updateUser(replaceAttributes, uid);
 			return uid;
 		}
 
 		if (objectClass.is(ObjectClass.GROUP_NAME)) {
-			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor);
+			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor, configuration);
 			updateOperation.updateGroup(replaceAttributes, uid);
 			return uid;
 		}
