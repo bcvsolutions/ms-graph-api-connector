@@ -1,11 +1,14 @@
 package eu.bcvsolutions.idm.connector.msgraph;
 
 import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
@@ -33,6 +36,9 @@ import org.identityconnectors.framework.spi.operations.UpdateOp;
 
 import com.microsoft.graph.auth.confidentialClient.ClientCredentialProvider;
 import com.microsoft.graph.auth.enums.NationalCloud;
+import com.microsoft.graph.core.DefaultClientConfig;
+import com.microsoft.graph.http.IHttpProvider;
+import com.microsoft.graph.httpcore.HttpClients;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
@@ -44,6 +50,9 @@ import eu.bcvsolutions.idm.connector.msgraph.operation.SearchOperation;
 import eu.bcvsolutions.idm.connector.msgraph.operation.UpdateOperation;
 import eu.bcvsolutions.idm.connector.msgraph.util.GuardedStringAccessor;
 import eu.bcvsolutions.idm.connector.msgraph.util.Utils;
+import okhttp3.Authenticator;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
 
 /**
  * @author Roman Kučera
@@ -288,12 +297,42 @@ public class GraphConnector implements Connector,
 				new String(guardedStringAccessor.getArray()),
 				this.configuration.getTenant(),
 				NationalCloud.valueOf(this.getConfiguration().getNationalCloud()));
-
 		guardedStringAccessor.clearArray();
+
+		boolean useProxyAuth = !StringUtils.isBlank(this.configuration.getProxyUsername()) && this.configuration.getProxyPassword() != null;
+		boolean useProxy = !StringUtils.isBlank(this.configuration.getProxyHostname()) && this.configuration.getProxyPort() > 0;
+
+		// Custom proxy authenticator
+		Authenticator proxyAuthenticator = null;
+		if (useProxyAuth) {
+			proxyAuthenticator = (route, response) -> {
+				this.configuration.getProxyPassword().access(guardedStringAccessor);
+				String credential = Credentials.basic(this.configuration.getProxyUsername(), new String(guardedStringAccessor.getArray()));
+				guardedStringAccessor.clearArray();
+				return response.request().newBuilder()
+						.header("Proxy-Authorization", credential)
+						.build();
+			};
+		}
+
+		// Custom client so we can use proxy if it's configure in connector
+		OkHttpClient.Builder builder = HttpClients.createDefault(authProvider).newBuilder();
+		if (useProxy) {
+			builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(this.configuration.getProxyHostname(), this.configuration.getProxyPort())));
+		}
+		if (useProxyAuth) {
+			builder.proxyAuthenticator(proxyAuthenticator);
+		}
+
+		// Custom http provider with custom http client
+		IHttpProvider httpProvider = DefaultClientConfig
+				.createWithAuthenticationProvider(authProvider)
+				.getHttpProvider(builder.build());
 
 		graphClient = GraphServiceClient
 				.builder()
 				.authenticationProvider(authProvider)
+				.httpProvider(httpProvider)
 				.buildClient();
 	}
 }

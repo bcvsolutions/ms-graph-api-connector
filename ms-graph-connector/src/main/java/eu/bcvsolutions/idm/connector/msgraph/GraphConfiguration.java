@@ -20,6 +20,10 @@ public class GraphConfiguration extends AbstractConfiguration {
 	private String tenant;
 	private String nationalCloud;
 	private boolean disablePasswordChangeAfterFirstLogin;
+	private int proxyPort = 0;
+	private String proxyHostname;
+	private String proxyUsername;
+	private GuardedString proxyPassword;
 
 	@ConfigurationProperty(displayMessageKey = "graph.connector.clientId.display",
 			helpMessageKey = "graph.connector.clientId.help", required = true, order = 1)
@@ -82,6 +86,46 @@ public class GraphConfiguration extends AbstractConfiguration {
 
 	public void setDisablePasswordChangeAfterFirstLogin(boolean disablePasswordChangeAfterFirstLogin) {
 		this.disablePasswordChangeAfterFirstLogin = disablePasswordChangeAfterFirstLogin;
+	}
+
+	@ConfigurationProperty(displayMessageKey = "graph.connector.proxyPort.display",
+			helpMessageKey = "graph.connector.proxyPort.help", order = 7)
+	public int getProxyPort() {
+		return proxyPort;
+	}
+
+	public void setProxyPort(int proxyPort) {
+		this.proxyPort = proxyPort;
+	}
+
+	@ConfigurationProperty(displayMessageKey = "graph.connector.proxyHostname.display",
+			helpMessageKey = "graph.connector.proxyHostname.help", order = 8)
+	public String getProxyHostname() {
+		return proxyHostname;
+	}
+
+	public void setProxyHostname(String proxyHostname) {
+		this.proxyHostname = proxyHostname;
+	}
+
+	@ConfigurationProperty(displayMessageKey = "graph.connector.proxyUsername.display",
+			helpMessageKey = "graph.connector.proxyUsername.help", order = 9)
+	public String getProxyUsername() {
+		return proxyUsername;
+	}
+
+	public void setProxyUsername(String proxyUsername) {
+		this.proxyUsername = proxyUsername;
+	}
+
+	@ConfigurationProperty(displayMessageKey = "graph.connector.proxyPass.display",
+			helpMessageKey = "graph.connector.proxyPass.help", confidential = true, order = 10)
+	public GuardedString getProxyPassword() {
+		return proxyPassword;
+	}
+
+	public void setProxyPassword(GuardedString proxyPassword) {
+		this.proxyPassword = proxyPassword;
 	}
 
 	@Override

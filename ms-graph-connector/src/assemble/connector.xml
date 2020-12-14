@@ -19,14 +19,15 @@
     </fileSet>
   </fileSets>
 
-  <dependencySets>
-    <dependencySet>
-        <excludes>
-            <exclude>net.tirasa.connid:connector-framework</exclude>
-            <exclude>net.tirasa.connid:connector-framework-internal</exclude>
-        </excludes>
-      <outputDirectory>lib</outputDirectory>
-    </dependencySet>
-  </dependencySets>
+<!--    This is needed for running it in remote connector server-->
+<!--  <dependencySets>-->
+<!--    <dependencySet>-->
+<!--        <excludes>-->
+<!--            <exclude>net.tirasa.connid:connector-framework</exclude>-->
+<!--            <exclude>net.tirasa.connid:connector-framework-internal</exclude>-->
+<!--        </excludes>-->
+<!--      <outputDirectory>lib</outputDirectory>-->
+<!--    </dependencySet>-->
+<!--  </dependencySets>-->
 
 </assembly>
