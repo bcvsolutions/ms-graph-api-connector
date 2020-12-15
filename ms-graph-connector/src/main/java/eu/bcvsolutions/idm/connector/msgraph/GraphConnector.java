@@ -68,7 +68,7 @@ public class GraphConnector implements Connector,
 	public static List<String> basicUserAttrs = new ArrayList<>();
 
 	private GraphConfiguration configuration;
-	private IGraphServiceClient graphClient;
+	private static IGraphServiceClient graphClient;
 	private GuardedStringAccessor guardedStringAccessor;
 
 	@Override
