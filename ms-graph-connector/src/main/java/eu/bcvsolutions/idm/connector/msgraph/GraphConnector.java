@@ -69,7 +69,7 @@ public class GraphConnector implements Connector,
 
 	private GraphConfiguration configuration;
 	private static IGraphServiceClient graphClient;
-	private GuardedStringAccessor guardedStringAccessor;
+	private static GuardedStringAccessor guardedStringAccessor;
 
 	@Override
 	public GraphConfiguration getConfiguration() {
