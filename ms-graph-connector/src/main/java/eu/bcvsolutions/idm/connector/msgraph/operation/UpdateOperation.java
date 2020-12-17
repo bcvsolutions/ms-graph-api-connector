@@ -39,7 +39,7 @@ public class UpdateOperation {
 	 * @param updateAttributes Set of attributes which should be updated
 	 * @param uid              User identification
 	 */
-	public void updateUser(final Set<Attribute> updateAttributes, Uid uid) {
+	public User updateUser(final Set<Attribute> updateAttributes, Uid uid) {
 		AttributesAccessor attributesAccessor = new AttributesAccessor(updateAttributes);
 		User user = Utils.prepareUserObject(attributesAccessor, guardedStringAccessor);
 		if (graphConfiguration.isDisablePasswordChangeAfterFirstLogin() && user.passwordProfile != null) {
@@ -54,6 +54,8 @@ public class UpdateOperation {
 
 		List<String> assignedLicenses = attributesAccessor.findStringList("assignedLicenses");
 		Utils.setLicenses(assignedLicenses, uid.getUidValue(), graphClient);
+
+		return user;
 	}
 
 	/**
