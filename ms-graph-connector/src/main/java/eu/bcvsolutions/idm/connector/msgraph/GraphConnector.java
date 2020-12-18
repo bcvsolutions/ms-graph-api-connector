@@ -79,13 +79,6 @@ public class GraphConnector implements Connector,
 	@Override
 	public void init(final Configuration configuration) {
 		this.configuration = (GraphConfiguration) configuration;
-
-		Arrays.stream(User.class.getDeclaredFields()).forEach(field -> {
-			// We will put all basic user attributes into List.
-			if (Utils.isBasicDataType(field) && !"deviceEnrollmentLimit".equals(field.getName())) {
-				basicUserAttrs.add(field.getName());
-			}
-		});
 		LOG.ok("Connector {0} successfully initialized", getClass().getName());
 	}
 
@@ -288,6 +281,15 @@ public class GraphConnector implements Connector,
 	}
 
 	private void initGraphClient() {
+		if (basicUserAttrs.isEmpty()) {
+			Arrays.stream(User.class.getDeclaredFields()).forEach(field -> {
+				// We will put all basic user attributes into List.
+				if (Utils.isBasicDataType(field) && !"deviceEnrollmentLimit".equals(field.getName())) {
+					basicUserAttrs.add(field.getName());
+				}
+			});
+		}
+
 		guardedStringAccessor = new GuardedStringAccessor();
 		this.configuration.getClientSecret().access(guardedStringAccessor);
 
