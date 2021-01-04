@@ -125,6 +125,9 @@ public class GraphConnector implements Connector,
 		if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
 			UpdateOperation updateOperation = new UpdateOperation(graphClient, guardedStringAccessor, configuration);
 			User user = updateOperation.updateUser(replaceAttributes, uid);
+			if (StringUtils.isBlank(user.userPrincipalName)) {
+				return uid;
+			}
 			return new Uid(user.userPrincipalName);
 		}
 
