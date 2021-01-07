@@ -202,9 +202,8 @@ public class GraphConnector implements Connector,
 
 	@Override
 	public void test() {
-		if (graphClient == null) {
-			initGraphClient();
-		}
+		// Init client every time in test method so if user changed some config it create a new client with the correct one
+		initGraphClient();
 		// try to load one user from API
 		graphClient.users().buildRequest().top(1).get();
 	}
