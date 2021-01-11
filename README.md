@@ -13,6 +13,8 @@ Supported operations for LICENCE
 * ASSIGN new licence to user
 * REMOVE licence from user
 
+Assigning/removing of licence is done via UUID. If you need to know the UUID of specific licence, see https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/licensing-service-plan-reference other option is to display licence detail in Azure portal and you will see UUID in the URL bar in the end.
+
 ### Configuration
 
 If you change some configuration you need to perform Test operation so the new config will load into connector and new grapClient instance is created.
