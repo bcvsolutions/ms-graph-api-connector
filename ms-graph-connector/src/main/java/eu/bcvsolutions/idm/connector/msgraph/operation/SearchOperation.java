@@ -5,8 +5,10 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.identityconnectors.common.logging.Log;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 
 import com.microsoft.graph.core.ClientException;
+import com.microsoft.graph.http.GraphServiceException;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
@@ -47,8 +49,15 @@ public class SearchOperation {
 			return user;
 		} catch (ClientException e) {
 			LOG.info("ClientException:", e);
+			if (e instanceof GraphServiceException) {
+				GraphServiceException graphServiceException = (GraphServiceException) e;
+				if (graphServiceException.getResponseCode() == 404) {
+					// User not found return null, we don't want to throw error in this case
+					return null;
+				}
+			}
+			throw new ConnectorException("Getting one user failed: ", e);
 		}
-		return null;
 	}
 
 	/**
