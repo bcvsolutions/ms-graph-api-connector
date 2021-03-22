@@ -320,7 +320,7 @@ public class GraphConnector implements Connector,
 		}
 
 		// Custom client so we can use proxy if it's configure in connector
-		OkHttpClient.Builder builder = HttpClients.createDefault(authProvider).newBuilder();
+		OkHttpClient.Builder builder = HttpClients.custom();
 		if (useProxy) {
 			builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(this.configuration.getProxyHostname(), this.configuration.getProxyPort())));
 		}
