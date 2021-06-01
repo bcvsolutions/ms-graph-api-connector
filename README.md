@@ -18,6 +18,7 @@ Assigning/removing of licence is done via UUID. If you need to know the UUID of 
 ### Configuration
 
 If you change some configuration you need to perform Test operation so the new config will load into connector and new grapClient instance is created.
+You will probably need to import certificates into trustore for these URL https://graph.microsoft.com/ and https://login.microsoftonline.com
 
 **Client ID** - UUID of application which you need to create in Azure portal. See https://docs.microsoft.com/en-us/graph/auth-register-app-v2?view=graph-rest-1.0
 Created app need these permission Directory.ReadWrite.All and User.ReadWrite.All
