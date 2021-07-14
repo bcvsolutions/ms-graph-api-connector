@@ -1,6 +1,9 @@
 package eu.bcvsolutions.idm.connector.msgraph.util;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.identityconnectors.common.logging.Log;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.AttributesAccessor;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
@@ -220,24 +224,29 @@ public final class Utils {
 	public static void setLicenses(List<String> addLicenses, String uid, IBaseGraphServiceClient graphClient) {
 		List<UUID> removeLicenses = new ArrayList<>();
 
-		if (addLicenses != null) {
-			LOG.info("We got some licenses for User");
-			// prepare list of licenses which should be removed
-			removeLicenses.addAll(getLicensesForUser(uid, graphClient)
-					.stream()
-					.filter(assignedLicense -> !addLicenses.contains(assignedLicense.skuId.toString()))
-					.map(assignedLicense -> assignedLicense.skuId)
-					.collect(Collectors.toList()));
+		try {
+			String encodedId = URLEncoder.encode(uid, StandardCharsets.UTF_8.toString());
+			if (addLicenses != null) {
+				LOG.info("We got some licenses for User");
+				// prepare list of licenses which should be removed
+				removeLicenses.addAll(getLicensesForUser(encodedId, graphClient)
+						.stream()
+						.filter(assignedLicense -> !addLicenses.contains(assignedLicense.skuId.toString()))
+						.map(assignedLicense -> assignedLicense.skuId)
+						.collect(Collectors.toList()));
 
-			LOG.info("We will update licenses for user {0}", uid);
-			List<AssignedLicense> assignedLicenses = prepareAddLicence(addLicenses);
+				LOG.info("We will update licenses for user {0}", uid);
+				List<AssignedLicense> assignedLicenses = prepareAddLicence(addLicenses);
 
-			graphClient.users(uid)
-					.assignLicense(assignedLicenses, removeLicenses)
-					.buildRequest()
-					.post();
-		} else {
-			LOG.info("No licenses for User nothing to do");
+				graphClient.users(encodedId)
+						.assignLicense(assignedLicenses, removeLicenses)
+						.buildRequest()
+						.post();
+			} else {
+				LOG.info("No licenses for User nothing to do");
+			}
+		} catch (UnsupportedEncodingException e) {
+			throw new ConnectorException("Assigning licences failed: ", e);
 		}
 	}
 

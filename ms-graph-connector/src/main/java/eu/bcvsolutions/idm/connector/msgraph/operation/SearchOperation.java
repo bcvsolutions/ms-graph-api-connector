@@ -1,5 +1,8 @@
 package eu.bcvsolutions.idm.connector.msgraph.operation;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,15 +42,17 @@ public class SearchOperation {
 	 */
 	public User getUser(String id) {
 		try {
-			User user = graphClient.users(id)
+			String encodedId = URLEncoder.encode(id, StandardCharsets.UTF_8.toString());
+
+			User user = graphClient.users(encodedId)
 					.buildRequest()
 					.select(StringUtils.join(GraphConnector.basicUserAttrs, ','))
 					.get();
 
-			user.assignedLicenses = Utils.getLicensesForUser(id, graphClient);
+			user.assignedLicenses = Utils.getLicensesForUser(encodedId, graphClient);
 
 			return user;
-		} catch (ClientException e) {
+		} catch (ClientException | UnsupportedEncodingException e) {
 			LOG.info("ClientException:", e);
 			if (e instanceof GraphServiceException) {
 				GraphServiceException graphServiceException = (GraphServiceException) e;

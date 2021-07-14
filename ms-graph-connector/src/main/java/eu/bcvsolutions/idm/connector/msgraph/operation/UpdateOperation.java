@@ -1,9 +1,13 @@
 package eu.bcvsolutions.idm.connector.msgraph.operation;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
 import org.identityconnectors.common.logging.Log;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributesAccessor;
 import org.identityconnectors.framework.common.objects.Uid;
@@ -46,15 +50,20 @@ public class UpdateOperation {
 			LOG.info("Disable of password change after first login for password change operation is enable in connector configuration.");
 			user.passwordProfile.forceChangePasswordNextSignIn = false;
 		}
-		graphClient
-				.users(uid.getUidValue())
-				.buildRequest()
-				.patch(user);
-		LOG.info("User {0} updated", uid.getUidValue());
 
-		List<String> assignedLicenses = attributesAccessor.findStringList("assignedLicenses");
-		Utils.setLicenses(assignedLicenses, uid.getUidValue(), graphClient);
+		try {
+			String encodedId = URLEncoder.encode(uid.getUidValue(), StandardCharsets.UTF_8.toString());
+			graphClient
+					.users(encodedId)
+					.buildRequest()
+					.patch(user);
+			LOG.info("User {0} updated", uid.getUidValue());
 
+			List<String> assignedLicenses = attributesAccessor.findStringList("assignedLicenses");
+			Utils.setLicenses(assignedLicenses, encodedId, graphClient);
+		} catch (UnsupportedEncodingException e) {
+			throw new ConnectorException("Updating one user failed: ", e);
+		}
 		return user;
 	}
 
