@@ -20,11 +20,14 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 
 import com.microsoft.graph.models.extensions.AssignedLicense;
 import com.microsoft.graph.models.extensions.DirectoryObject;
+import com.microsoft.graph.models.extensions.DirectoryRole;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IBaseGraphServiceClient;
+import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.LicenseDetails;
 import com.microsoft.graph.models.extensions.PasswordProfile;
 import com.microsoft.graph.models.extensions.User;
+import com.microsoft.graph.requests.extensions.IDirectoryObjectCollectionWithReferencesPage;
 import com.microsoft.graph.requests.extensions.ILicenseDetailsCollectionPage;
 
 /**
@@ -70,9 +73,10 @@ public final class Utils {
 	 *
 	 * @param group       Group object
 	 * @param objectClass group object class
+	 * @param graphClient
 	 * @return Connector object with data
 	 */
-	public static ConnectorObject handleGroup(Group group, ObjectClass objectClass) {
+	public static ConnectorObject handleGroup(Group group, ObjectClass objectClass, IGraphServiceClient graphClient) {
 		ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
 
 		if (group != null && !StringUtils.isBlank(group.id)) {
@@ -83,11 +87,51 @@ public final class Utils {
 
 			Field[] declaredFields = Group.class.getDeclaredFields();
 			addAttributeToBuilder(group, builder, declaredFields);
+
+			//Add members and owners
+			List<DirectoryObject> members = getAllRecords(graphClient.groups(group.id).members().buildRequest().get());
+			List<DirectoryObject> owners = getAllRecords(graphClient.groups(group.id).owners().buildRequest().get());
+
+			List<String> membersAsString = members.stream().map(user -> user.getRawObject().get("userPrincipalName").getAsString()).collect(Collectors.toList());
+			List<String> ownersAsString = owners.stream().map(user -> user.getRawObject().get("userPrincipalName").getAsString()).collect(Collectors.toList());
+
+			builder.addAttribute("members", membersAsString);
+			builder.addAttribute("owners", ownersAsString);
 		} else {
 			LOG.info("Group object is null or id attribute is null or empty");
 		}
 
 		return builder.build();
+	}
+
+	public static ConnectorObject handleAzureRole(DirectoryRole azureRole, ObjectClass objectClass, IGraphServiceClient graphClient) {
+		ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
+
+		if (azureRole != null && !StringUtils.isBlank(azureRole.id)) {
+			LOG.info("We will process azure role: {0}", azureRole.id);
+			builder.setUid(azureRole.id);
+			builder.setName(azureRole.id);
+			builder.setObjectClass(objectClass);
+			builder.addAttribute("displayName", azureRole.displayName);
+			builder.addAttribute("description", azureRole.description);
+
+			//Add members and owners
+			List<DirectoryObject> members = getAllRecords(graphClient.directoryRoles(azureRole.id).members().buildRequest().get());
+			List<String> membersAsString = members.stream().map(user -> user.getRawObject().get("userPrincipalName").getAsString()).collect(Collectors.toList());
+			builder.addAttribute("members", membersAsString);
+		}
+
+		return builder.build();
+	}
+
+	private static List<DirectoryObject> getAllRecords(IDirectoryObjectCollectionWithReferencesPage page) {
+		List<DirectoryObject> records = new ArrayList<>(page.getCurrentPage());
+
+		while (page.getNextPage() != null) {
+			page = page.getNextPage().buildRequest().get();
+			records.addAll(page.getCurrentPage());
+		}
+		return records;
 	}
 
 	/**
@@ -218,8 +262,8 @@ public final class Utils {
 	 * Update licenses for users. It will perform get to end system and then make diff and decide which licences should be removed and which should be added
 	 *
 	 * @param addLicenses List with licenses
-	 * @param uid                User identification
-	 * @param graphClient        client for Graph API
+	 * @param uid         User identification
+	 * @param graphClient client for Graph API
 	 */
 	public static void setLicenses(List<String> addLicenses, String uid, IBaseGraphServiceClient graphClient) {
 		List<UUID> removeLicenses = new ArrayList<>();

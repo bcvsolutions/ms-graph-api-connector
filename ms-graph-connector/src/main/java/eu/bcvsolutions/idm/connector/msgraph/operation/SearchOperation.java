@@ -12,9 +12,11 @@ import org.identityconnectors.framework.common.exceptions.ConnectorException;
 
 import com.microsoft.graph.core.ClientException;
 import com.microsoft.graph.http.GraphServiceException;
+import com.microsoft.graph.models.extensions.DirectoryRole;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
+import com.microsoft.graph.requests.extensions.IDirectoryRoleCollectionPage;
 import com.microsoft.graph.requests.extensions.IGroupCollectionPage;
 import com.microsoft.graph.requests.extensions.IUserCollectionPage;
 
@@ -76,6 +78,16 @@ public class SearchOperation {
 	}
 
 	/**
+	 * Get one Azure role
+	 *
+	 * @param id Role Identifier
+	 * @return Role object
+	 */
+	public DirectoryRole getAzureRole(String id) {
+		return graphClient.directoryRoles(id).buildRequest().get();
+	}
+
+	/**
 	 * Get all users
 	 *
 	 * @return List of Users
@@ -101,9 +113,8 @@ public class SearchOperation {
 	 * @return List of Groups
 	 */
 	public List<Group> getGroups() {
-		List<Group> groups = new ArrayList<>();
 		IGroupCollectionPage groupCollectionPage = graphClient.groups().buildRequest().get();
-		groups.addAll(groupCollectionPage.getCurrentPage());
+		List<Group> groups = new ArrayList<>(groupCollectionPage.getCurrentPage());
 
 		LOG.info("First page loaded");
 		while (groupCollectionPage.getNextPage() != null) {
@@ -113,5 +124,24 @@ public class SearchOperation {
 		}
 
 		return groups;
+	}
+
+	/**
+	 * Get all Azure roles
+	 *
+	 * @return List of Roles
+	 */
+	public List<DirectoryRole> getAzureGroups() {
+		IDirectoryRoleCollectionPage azureRolesPage = graphClient.directoryRoles().buildRequest().get();
+		List<DirectoryRole> azureRoles = new ArrayList<>(azureRolesPage.getCurrentPage());
+
+		LOG.info("First page loaded");
+		while (azureRolesPage.getNextPage() != null) {
+			LOG.info("Loading next page");
+			azureRolesPage = azureRolesPage.getNextPage().buildRequest().get();
+			azureRoles.addAll(azureRolesPage.getCurrentPage());
+		}
+
+		return azureRoles;
 	}
 }

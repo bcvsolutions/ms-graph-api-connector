@@ -24,6 +24,7 @@ public class GraphConfiguration extends AbstractConfiguration {
 	private String proxyHostname;
 	private String proxyUsername;
 	private GuardedString proxyPassword;
+	private boolean loadAzureRoles;
 
 	@ConfigurationProperty(displayMessageKey = "graph.connector.clientId.display",
 			helpMessageKey = "graph.connector.clientId.help", required = true, order = 1)
@@ -126,6 +127,16 @@ public class GraphConfiguration extends AbstractConfiguration {
 
 	public void setProxyPassword(GuardedString proxyPassword) {
 		this.proxyPassword = proxyPassword;
+	}
+
+	@ConfigurationProperty(displayMessageKey = "graph.connector.azureRoles.display",
+			helpMessageKey = "graph.connector.azureRoles.help", order = 11)
+	public boolean isLoadAzureRoles() {
+		return loadAzureRoles;
+	}
+
+	public void setLoadAzureRoles(boolean loadAzureRoles) {
+		this.loadAzureRoles = loadAzureRoles;
 	}
 
 	@Override

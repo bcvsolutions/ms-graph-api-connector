@@ -39,6 +39,7 @@ import com.microsoft.graph.auth.enums.NationalCloud;
 import com.microsoft.graph.core.DefaultClientConfig;
 import com.microsoft.graph.http.IHttpProvider;
 import com.microsoft.graph.httpcore.HttpClients;
+import com.microsoft.graph.models.extensions.DirectoryRole;
 import com.microsoft.graph.models.extensions.Group;
 import com.microsoft.graph.models.extensions.IGraphServiceClient;
 import com.microsoft.graph.models.extensions.User;
@@ -192,6 +193,10 @@ public class GraphConnector implements Connector,
 					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("forceChangePasswordNextSignIn", Boolean.class));
 					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("forceChangePasswordNextSignInWithMfa", Boolean.class));
 					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.build("__PASSWORD__", GuardedString.class));
+				} else if ("members".equals(field.getName())) {
+					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("members").setMultiValued(true).setType(String.class).build());
+				} else if ("owners".equals(field.getName())) {
+					objectClassBuilder.addAttributeInfo(AttributeInfoBuilder.define("owners").setMultiValued(true).setType(String.class).build());
 				} else {
 //					TODO this works for custom object but I dont want to use it for now, probably more object will need some manual mapping as passwordProfile
 //					prepareSchema(objectClassBuilder, field.getType().getDeclaredFields());
@@ -259,7 +264,12 @@ public class GraphConnector implements Connector,
 			users.forEach(user -> handler.handle(Utils.handleUser(user, objectClass)));
 		} else if (objectClass.is(ObjectClass.GROUP_NAME)) {
 			List<Group> groups = searchOperation.getGroups();
-			groups.forEach(group -> handler.handle(Utils.handleGroup(group, objectClass)));
+			groups.forEach(group -> handler.handle(Utils.handleGroup(group, objectClass, graphClient)));
+
+			if (configuration.isLoadAzureRoles()) {
+				List<DirectoryRole> azureRoles = searchOperation.getAzureGroups();
+				azureRoles.forEach(azureRole -> handler.handle(Utils.handleAzureRole(azureRole, objectClass, graphClient)));
+			}
 		} else {
 			LOG.warn("Unsupported object class {0}", objectClass);
 		}
@@ -275,7 +285,14 @@ public class GraphConnector implements Connector,
 		} else if (objectClass.is(ObjectClass.GROUP_NAME)) {
 			Group group = searchOperation.getGroup(query);
 			if (group != null) {
-				handler.handle(Utils.handleGroup(group, objectClass));
+				handler.handle(Utils.handleGroup(group, objectClass, graphClient));
+			}
+
+			if (configuration.isLoadAzureRoles()) {
+				DirectoryRole azureRole = searchOperation.getAzureRole(query);
+				if (azureRole != null) {
+					handler.handle(Utils.handleAzureRole(azureRole, objectClass, graphClient));
+				}
 			}
 		} else {
 			LOG.warn("Unsupported object class {0}", objectClass);
